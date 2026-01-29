@@ -34,7 +34,7 @@ public:
     PointCloudPtr apply(PointCloudConstPtr input) const;
     
 private:
-    VoxelGridConfig config_;
+    VoxelGridConfig m_config_;
 };
 
 } // namespace pointcloud::filters

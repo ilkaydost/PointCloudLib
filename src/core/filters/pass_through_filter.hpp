@@ -34,7 +34,7 @@ public:
     PointCloudPtr apply(PointCloudConstPtr input) const;
     
 private:
-    PassThroughConfig config_;
+    PassThroughConfig m_config_;
 };
 
 } // namespace pointcloud::filters
