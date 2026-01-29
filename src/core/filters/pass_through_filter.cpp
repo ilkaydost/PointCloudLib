@@ -4,14 +4,14 @@
 namespace pointcloud::filters {
 
 PassThroughFilter::PassThroughFilter(const PassThroughConfig& config)
-    : config_(config) {}
+    : m_config_(config) {}
 
 void PassThroughFilter::setConfig(const PassThroughConfig& config) {
-    config_ = config;
+    m_config_ = config;
 }
 
 PassThroughConfig PassThroughFilter::getConfig() const {
-    return config_;
+    return m_config_;
 }
 
 PointCloudPtr PassThroughFilter::apply(PointCloudConstPtr input) const {
@@ -23,9 +23,9 @@ PointCloudPtr PassThroughFilter::apply(PointCloudConstPtr input) const {
     
     pcl::PassThrough<PointT> filter;
     filter.setInputCloud(input);
-    filter.setFilterFieldName(config_.field_name);
-    filter.setFilterLimits(config_.min_limit, config_.max_limit);
-    filter.setNegative(config_.negative);
+    filter.setFilterFieldName(m_config_.field_name);
+    filter.setFilterLimits(m_config_.min_limit, m_config_.max_limit);
+    filter.setNegative(m_config_.negative);
     filter.filter(*output);
     
     return output;
