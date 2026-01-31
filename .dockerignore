@@ -1,0 +1,10 @@
+# Ignore local build artifacts and vcpkg installs
+build/
+vcpkg_installed/
+vcpkg/
+node_modules/
+ui/node_modules/
+.vscode/
+.git
+*.log
+**/tests/data/
