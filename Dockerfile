@@ -23,8 +23,8 @@ WORKDIR /workspace
 # Copy project sources
 COPY . /workspace
 
-# Install libraries from manifest (reads vcpkg.json)
-RUN $VCPKG_ROOT/vcpkg install --triplet x64-linux
+# Install libraries from manifest (reads vcpkg.json) #
+RUN $VCPKG_ROOT/vcpkg install --triplet x64-linux --clean-after-build
 
 # Configure and build with CMake (uses CMakePresets.json)
 RUN cmake --preset=default && cmake --build build -- -j$(nproc)
