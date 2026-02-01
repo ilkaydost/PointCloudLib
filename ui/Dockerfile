@@ -5,8 +5,8 @@ WORKDIR /app
 # Copy UI sources
 COPY . /app
 
-# Install dependencies and build
-RUN npm install --prefer-offline --no-audit --progress=false
+# Install dependencies and build --progress=false to reduce log size
+RUN npm install --no-audit 
 RUN npm run build
 
 FROM node:18-bullseye-slim
