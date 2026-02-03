@@ -12,12 +12,12 @@ export default function Home() {
   const checkServerHealth = usePointCloudStore((state) => state.checkServerHealth);
   const error = usePointCloudStore((state) => state.error);
 
-  // Testing ui side without server connection comment this useEffect block
-  // useEffect(() => {
-  //   checkServerHealth();
-  //   const interval = setInterval(checkServerHealth, 5000);
-  //   return () => clearInterval(interval);
-  // }, [checkServerHealth]);
+  // Check server health on mount and every 5 seconds
+  useEffect(() => {
+    checkServerHealth();
+    const interval = setInterval(checkServerHealth, 5000);
+    return () => clearInterval(interval);
+  }, [checkServerHealth]);
 
   const sidebar = (
     <div className="space-y-4 p-4">

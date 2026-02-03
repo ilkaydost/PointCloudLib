@@ -4,9 +4,18 @@
 #include <memory>
 #include <atomic>
 #include <mutex>
-#include "core/types/point_types.hpp"
+#include <boost/shared_ptr.hpp>
+
+// Forward declare PCL types to avoid including PCL/Eigen headers
+namespace pcl {
+template<typename PointT> class PointCloud;
+struct PointXYZRGB;
+}
 
 namespace pointcloud::server {
+
+// Use opaque pointer type to avoid Eigen header issues
+using PointCloudPtr = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB>>;
 
 class HttpServer {
 public:
@@ -22,10 +31,10 @@ public:
 	// Check if running
 	bool isRunning() const;
     
-	// Get the current loaded point cloud
+	// Get the current loaded point cloud (defined in cpp file)
 	PointCloudPtr getCurrentCloud() const;
     
-	// Set the current point cloud
+	// Set the current point cloud (defined in cpp file)
 	void setCurrentCloud(PointCloudPtr cloud);
     
 private:

@@ -2,19 +2,35 @@ services:
   server:
     build:
       context: .
-      dockerfile: Dockerfile.server
+      dockerfile: Dockerfile
+      cache_from:
+        - type=registry,ref=pointcloudlib-server:latest
+    container_name: pointcloudlib-server
     ports:
       - "5050:5050"
     environment:
       - VCPKG_ROOT=/opt/vcpkg
     volumes:
       - .:/workspace
+    networks:
+      - pointcloudlib-net
 
   ui:
     build:
       context: ./ui
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:5050/api
+    container_name: pointcloudlib-ui
     ports:
       - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5050/api
     depends_on:
       - server
+    networks:
+      - pointcloudlib-net
+
+networks:
+  pointcloud-net:
+    driver: bridge

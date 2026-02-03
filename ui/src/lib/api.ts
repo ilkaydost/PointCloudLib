@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:5050/api'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050/api'
 
 export interface PointCloudStats {
   pointCount: number
@@ -24,6 +24,16 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path: filePath }),
+    })
+    return res.json()
+  },
+
+  async uploadPointCloud(file: File): Promise<LoadResponse> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(`${API_BASE}/upload`, {
+      method: 'POST',
+      body: formData,
     })
     return res.json()
   },

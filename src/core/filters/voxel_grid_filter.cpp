@@ -1,5 +1,6 @@
 #include "voxel_grid_filter.hpp"
 #include <pcl/filters/voxel_grid.h>
+#include <boost/make_shared.hpp>
 
 namespace pointcloud::filters {
 
@@ -28,10 +29,10 @@ VoxelGridConfig VoxelGridFilter::getConfig() const {
 
 PointCloudPtr VoxelGridFilter::apply(PointCloudConstPtr input) const {
     if (!input || input->empty()) {
-        return std::make_shared<PointCloud>();
+        return boost::make_shared<PointCloud>();
     }
     
-    auto output = std::make_shared<PointCloud>();
+    auto output = boost::make_shared<PointCloud>();
     
     pcl::VoxelGrid<PointT> filter;
     filter.setInputCloud(input);

@@ -1,8 +1,11 @@
+#include "core/types/point_types.hpp"  // Include first to get full PCL types
 #include "http_server.hpp"
 #include "serialization.hpp"
 #include "core/io/point_cloud_io.hpp"
 #include "core/filters/filters.hpp"
 #include <iostream>
+#include <fstream>
+#include <filesystem>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -59,6 +62,67 @@ void HttpServer::setupRoutes() {
 			};
 			res.set_content(response.dump(), "application/json");
             
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// Upload point cloud file (multipart/form-data)
+	m_server_.Post("/api/upload", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			if (!req.has_file("file")) {
+				res.status = 400;
+				res.set_content(R"({"error":"No file uploaded"})", "application/json");
+				return;
+			}
+			
+			const auto& file = req.get_file_value("file");
+			std::string filename = file.filename;
+			std::string content = file.content;
+			
+			// Get file extension
+			std::string ext = io::getFileExtension(filename);
+			if (ext != "pcd" && ext != "ply") {
+				res.status = 400;
+				res.set_content(json{{"error", "Unsupported file format: " + ext}}.dump(), "application/json");
+				return;
+			}
+			
+			// Create temporary file
+			std::string temp_dir = std::filesystem::temp_directory_path().string();
+			std::string temp_path = temp_dir + "/pointcloud_upload_" + filename;
+			
+			// Write content to temp file
+			std::ofstream ofs(temp_path, std::ios::binary);
+			if (!ofs) {
+				res.status = 500;
+				res.set_content(R"({"error":"Failed to create temporary file"})", "application/json");
+				return;
+			}
+			ofs.write(content.data(), content.size());
+			ofs.close();
+			
+			// Load point cloud from temp file
+			auto result = io::loadPointCloud(temp_path);
+			
+			// Clean up temp file
+			std::filesystem::remove(temp_path);
+			
+			if (!result.success) {
+				res.status = 400;
+				res.set_content(json{{"error", result.error_message}}.dump(), "application/json");
+				return;
+			}
+			
+			setCurrentCloud(result.cloud);
+			
+			json response = {
+				{"success", true},
+				{"stats", statsToJson(result.stats)}
+			};
+			res.set_content(response.dump(), "application/json");
+			
 		} catch (const std::exception& e) {
 			res.status = 500;
 			res.set_content(json{{"error", e.what()}}.dump(), "application/json");

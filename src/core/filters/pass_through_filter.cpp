@@ -1,5 +1,6 @@
 #include "pass_through_filter.hpp"
 #include <pcl/filters/passthrough.h>
+#include <boost/make_shared.hpp>
 
 namespace pointcloud::filters {
 
@@ -16,10 +17,10 @@ PassThroughConfig PassThroughFilter::getConfig() const {
 
 PointCloudPtr PassThroughFilter::apply(PointCloudConstPtr input) const {
     if (!input || input->empty()) {
-        return std::make_shared<PointCloud>();
+        return boost::make_shared<PointCloud>();
     }
     
-    auto output = std::make_shared<PointCloud>();
+    auto output = boost::make_shared<PointCloud>();
     
     pcl::PassThrough<PointT> filter;
     filter.setInputCloud(input);
