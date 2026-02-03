@@ -4,6 +4,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
 #include <pcl/common/common.h>
+#include <boost/make_shared.hpp>
 #include <algorithm>
 #include <filesystem>
 
@@ -46,7 +47,7 @@ PointCloudStats calculateStats(PointCloudConstPtr cloud)
 LoadResult loadPointCloud(const std::string& file_path) 
 {
 	LoadResult result{};
-	result.cloud = std::make_shared<PointCloud>();
+	result.cloud = boost::make_shared<PointCloud>();
 	result.success = false;
 
 	if (!std::filesystem::exists(file_path)) {

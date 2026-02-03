@@ -10,6 +10,7 @@ interface PointCloudState {
   serverConnected: boolean
   checkServerHealth: () => Promise<void>
   loadPointCloud: (filePath: string) => Promise<void>
+  uploadPointCloud: (file: File) => Promise<void>
   fetchPoints: () => Promise<void>
   applyPassThroughFilter: (field: 'x'|'y'|'z', min:number, max:number) => Promise<void>
   applyVoxelGridFilter: (leafSize:number) => Promise<void>
@@ -38,6 +39,23 @@ export const usePointCloudStore = create<PointCloudState>((set, get) => ({
         await get().fetchPoints()
       } else {
         set({ error: response.error || 'Failed to load point cloud' })
+      }
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Unknown error' })
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+
+  uploadPointCloud: async (file: File) => {
+    set({ isLoading: true, error: null })
+    try {
+      const response = await api.uploadPointCloud(file)
+      if (response.success) {
+        set({ stats: response.stats })
+        await get().fetchPoints()
+      } else {
+        set({ error: response.error || 'Failed to upload point cloud' })
       }
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Unknown error' })

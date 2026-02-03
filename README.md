@@ -7,21 +7,39 @@ UI (Frontend) Side [In powershell]
 - ```cd ~/PointCloudlib/ui```
 
 - ```docker build -t pointcloudlib-ui .```
+  
+[//]: # "```docker build --build-arg NEXT_PUBLIC_API_URL=http://localhost:5050/api -t pointcloudlib-ui .```"
 
-- ```docker run -p 3000:3000 pointcloudlib-ui```
+- ```docker run -p 3000:3000 pointcloudlib-ui``` or
+- ```docker run -d --name pointcloudlib-ui -p 3000:3000 pointcloudlib-ui```
 
 - ```In web browser paste it-> http://localhost:3000 ```
 
 Yey!
 ![alt text](frontend_image.png)
 
-
 Server (Backend) Side
 - ```cd ~/PointCloudlib```
 
+
 - ```docker build -t pointcloudlib-server .```
 
-- ```docker run -p 5050:5050 pointcloudlib-server pointcloudlib-ui```
+- ```docker run -p 5050:5050 pointcloudlib-server pointcloudlib-ui```or
+- ```docker run -p 5050:5050 pointcloudlib-server```
+
+
+Test: 
+- ```curl http://localhost:5050/api/health```
+
+
+
+To:Do's 
+---
+    - Add move/rotate functions to obj feat
+    - Add colorful 3d viewer feat
+    - Add extra filters
+    - Add clusterings feat
+    - Add segmentation feat
 
 ## Architecture Diagram
 ```

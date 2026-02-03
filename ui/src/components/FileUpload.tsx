@@ -7,7 +7,7 @@ export function FileUpload() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const loadPointCloud = usePointCloudStore((state) => state.loadPointCloud);
+  const uploadPointCloud = usePointCloudStore((state) => state.uploadPointCloud);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -17,7 +17,7 @@ export function FileUpload() {
     setError(null);
 
     try {
-      await loadPointCloud(file.name);
+      await uploadPointCloud(file);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load point cloud');
     } finally {
