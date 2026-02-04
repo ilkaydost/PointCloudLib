@@ -3,6 +3,7 @@
 #include "serialization.hpp"
 #include "core/io/point_cloud_io.hpp"
 #include "core/filters/filters.hpp"
+#include "core/segmentation/segmentation.hpp"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -252,6 +253,62 @@ void HttpServer::setupRoutes() {
 			json response = {
 				{"success", true},
 				{"stats", statsToJson(stats)}
+			};
+			res.set_content(response.dump(), "application/json");
+            
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// RANSAC plane segmentation
+	m_server_.Post("/api/segment/ransac", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			auto cloud = getCurrentCloud();
+            
+			if (!cloud || cloud->empty()) {
+				res.status = 404;
+				res.set_content(R"({"error":"No point cloud loaded"})", "application/json");
+				return;
+			}
+            
+			auto body = json::parse(req.body);
+            
+			// Parse RANSAC config
+			segmentation::RansacPlaneConfig config;
+			if (body.contains("distanceThreshold")) {
+				config.distance_threshold = body["distanceThreshold"].get<double>();
+			}
+			if (body.contains("maxIterations")) {
+				config.max_iterations = body["maxIterations"].get<int>();
+			}
+			if (body.contains("extractInliers")) {
+				config.extract_inliers = body["extractInliers"].get<bool>();
+			}
+            
+			segmentation::RansacPlaneSegmenter segmenter(config);
+			auto seg_result = segmenter.segment(cloud);
+            
+			if (!seg_result.success) {
+				res.status = 400;
+				res.set_content(json{{"error", seg_result.error_message}}.dump(), "application/json");
+				return;
+			}
+            
+			// Set the result cloud based on extractInliers
+			PointCloudPtr result_cloud = config.extract_inliers ? 
+				seg_result.plane_cloud : seg_result.remaining_cloud;
+			setCurrentCloud(result_cloud);
+            
+			auto stats = io::calculateStats(result_cloud);
+			json response = {
+				{"success", true},
+				{"stats", statsToJson(stats)},
+				{"planeCoefficients", seg_result.coefficients},
+				{"inlierCount", seg_result.inlier_count},
+				{"planePoints", seg_result.plane_cloud->size()},
+				{"remainingPoints", seg_result.remaining_cloud->size()}
 			};
 			res.set_content(response.dump(), "application/json");
             

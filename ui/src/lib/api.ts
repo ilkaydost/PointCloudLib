@@ -9,6 +9,16 @@ export interface PointCloudStats {
 
 export interface LoadResponse { success: boolean; stats: PointCloudStats; error?: string }
 
+export interface RansacResponse {
+  success: boolean
+  stats: PointCloudStats
+  planeCoefficients?: number[]
+  inlierCount?: number
+  planePoints?: number
+  remainingPoints?: number
+  error?: string
+}
+
 export const api = {
   async healthCheck(): Promise<boolean> {
     try {
@@ -64,6 +74,19 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'voxelgrid', config }),
+    })
+    return res.json()
+  },
+
+  async applyRansacSegmentation(config: {
+    distanceThreshold: number
+    maxIterations: number
+    extractInliers: boolean
+  }) {
+    const res = await fetch(`${API_BASE}/segment/ransac`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
     })
     return res.json()
   }

@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { PassThroughControls } from './filters/PassThroughControls';
 import { VoxelGridControls } from './filters/VoxelGridControls';
+import { RansacControls } from './segmentation/RansacControls';
 import { usePointCloudStore } from '../store/pointCloudStore';
 
 export function ControlPanel() {
-  const [activeFilter, setActiveFilter] = useState<'passthrough' | 'voxelgrid' | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'passthrough' | 'voxelgrid' | 'ransac' | null>(null);
   const stats = usePointCloudStore((state) => state.stats);
 
   return (
@@ -76,9 +77,29 @@ export function ControlPanel() {
         </div>
       </div>
 
+      {/* Segmentation Selection */}
+      <div>
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          Segmentation
+        </h3>
+        <div className="space-y-2">
+          <button
+            onClick={() => setActiveFilter(activeFilter === 'ransac' ? null : 'ransac')}
+            className={`w-full px-4 py-2 text-left rounded-md transition-colors ${
+              activeFilter === 'ransac'
+                ? 'bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            RANSAC Plane
+          </button>
+        </div>
+      </div>
+
       {/* Filter Controls */}
       {activeFilter === 'passthrough' && <PassThroughControls />}
       {activeFilter === 'voxelgrid' && <VoxelGridControls />}
+      {activeFilter === 'ransac' && <RansacControls />}
     </div>
   );
 }

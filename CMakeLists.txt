@@ -31,6 +31,7 @@ add_library(pointcloud_core STATIC
     src/core/io/point_cloud_io.cpp
     src/core/filters/pass_through_filter.cpp
     src/core/filters/voxel_grid_filter.cpp
+    src/core/segmentation/ransac_plane_segmenter.cpp
 )
 
 target_include_directories(pointcloud_core PUBLIC
