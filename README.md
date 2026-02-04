@@ -15,8 +15,10 @@ UI (Frontend) Side [In powershell]
 
 - ```In web browser paste it-> http://localhost:3000 ```
 
-Yey!
+Yey! (Visuals)
+
 ![alt text](frontend_image.png)
+![ply colorful image](frontEnd-img.png)
 
 Server (Backend) Side
 - ```cd ~/PointCloudlib```

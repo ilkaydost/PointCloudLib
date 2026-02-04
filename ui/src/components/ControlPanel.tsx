@@ -5,42 +5,43 @@ import { PassThroughControls } from './filters/PassThroughControls';
 import { VoxelGridControls } from './filters/VoxelGridControls';
 import { RansacControls } from './segmentation/RansacControls';
 import { usePointCloudStore } from '../store/pointCloudStore';
+import styles from './css/ControlPanel.module.css';
 
 export function ControlPanel() {
   const [activeFilter, setActiveFilter] = useState<'passthrough' | 'voxelgrid' | 'ransac' | null>(null);
   const stats = usePointCloudStore((state) => state.stats);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+    <div className={styles.container}>
+      <div className={styles.section}>
+        <h2 className={styles.title}>
           Point Cloud Controls
         </h2>
         
         {/* Stats */}
         {stats && (
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4 mb-4 space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-300">Points:</span>
-              <span className="font-mono text-gray-900 dark:text-white">
+          <div className={styles.statsContainer}>
+            <div className={styles.statRow}>
+              <span className={styles.statLabel}>Points:</span>
+              <span className={styles.statValue}>
                 {stats.pointCount.toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-300">Bounds:</span>
-              <span className="font-mono text-xs text-gray-900 dark:text-white">
+            <div className={styles.statRow}>
+              <span className={styles.statLabel}>Bounds:</span>
+              <span className={styles.statValueSmall}>
                 X: [{stats.bounds.minX.toFixed(2)}, {stats.bounds.maxX.toFixed(2)}]
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-300"></span>
-              <span className="font-mono text-xs text-gray-900 dark:text-white">
+            <div className={styles.statRow}>
+              <span className={styles.statLabel}></span>
+              <span className={styles.statValueSmall}>
                 Y: [{stats.bounds.minY.toFixed(2)}, {stats.bounds.maxY.toFixed(2)}]
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-300"></span>
-              <span className="font-mono text-xs text-gray-900 dark:text-white">
+            <div className={styles.statRow}>
+              <span className={styles.statLabel}></span>
+              <span className={styles.statValueSmall}>
                 Z: [{stats.bounds.minZ.toFixed(2)}, {stats.bounds.maxZ.toFixed(2)}]
               </span>
             </div>
@@ -49,28 +50,24 @@ export function ControlPanel() {
       </div>
 
       {/* Filter Selection */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>
           Filters
         </h3>
-        <div className="space-y-2">
+        <div className={styles.buttonList}>
           <button
             onClick={() => setActiveFilter(activeFilter === 'passthrough' ? null : 'passthrough')}
-            className={`w-full px-4 py-2 text-left rounded-md transition-colors ${
-              activeFilter === 'passthrough'
-                ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
+            className={activeFilter === 'passthrough' 
+              ? `${styles.filterButton} ${styles.filterButtonActive}` 
+              : styles.filterButton}
           >
             PassThrough Filter
           </button>
           <button
             onClick={() => setActiveFilter(activeFilter === 'voxelgrid' ? null : 'voxelgrid')}
-            className={`w-full px-4 py-2 text-left rounded-md transition-colors ${
-              activeFilter === 'voxelgrid'
-                ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
+            className={activeFilter === 'voxelgrid' 
+              ? `${styles.filterButton} ${styles.filterButtonActive}` 
+              : styles.filterButton}
           >
             VoxelGrid Filter
           </button>
@@ -78,18 +75,16 @@ export function ControlPanel() {
       </div>
 
       {/* Segmentation Selection */}
-      <div>
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>
           Segmentation
         </h3>
-        <div className="space-y-2">
+        <div className={styles.buttonList}>
           <button
             onClick={() => setActiveFilter(activeFilter === 'ransac' ? null : 'ransac')}
-            className={`w-full px-4 py-2 text-left rounded-md transition-colors ${
-              activeFilter === 'ransac'
-                ? 'bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
+            className={activeFilter === 'ransac' 
+              ? `${styles.segmentButton} ${styles.segmentButtonActive}` 
+              : styles.segmentButton}
           >
             RANSAC Plane
           </button>

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { usePointCloudStore } from '../store/pointCloudStore';
+import styles from './css/FileUpload.module.css';
 
 export function FileUpload() {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,32 +27,25 @@ export function FileUpload() {
   };
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+    <div className={styles.container}>
+      <label className={styles.label}>
         Load Point Cloud
       </label>
-      <div className="flex items-center gap-2">
+      <div className={styles.inputWrapper}>
         <input
           ref={fileInputRef}
           type="file"
           accept=".pcd,.ply"
           onChange={handleFileSelect}
           disabled={isLoading}
-          className="block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-md file:border-0
-            file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100
-            dark:file:bg-blue-900 dark:file:text-blue-100
-            disabled:opacity-50 disabled:cursor-not-allowed"
+          className={styles.fileInput}
         />
         {isLoading && (
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+          <div className={styles.spinner}></div>
         )}
       </div>
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <p className={styles.error}>{error}</p>
       )}
     </div>
   );

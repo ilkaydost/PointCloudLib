@@ -6,6 +6,7 @@ import { PointCloudViewer } from '@/components/PointCloudViewer';
 import { FileUpload } from '@/components/FileUpload';
 import { ControlPanel } from '@/components/ControlPanel';
 import { usePointCloudStore } from '@/store/pointCloudStore';
+import styles from './css/page.module.css';
 
 export default function Home() {
   const serverConnected = usePointCloudStore((state) => state.serverConnected);
@@ -20,30 +21,30 @@ export default function Home() {
   }, [checkServerHealth]);
 
   const sidebar = (
-    <div className="space-y-4 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+    <div className={styles.sidebarContainer}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>
           PointCloudLib
         </h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className={styles.subtitle}>
           Point Cloud Viewer
         </p>
 
         {/* Server Status */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className={styles.statusContainer}>
           <div
-            className={`w-2 h-2 rounded-full ${
-              serverConnected ? 'bg-green-500' : 'bg-red-500'
+            className={`${styles.statusDot} ${
+              serverConnected ? styles.statusConnected : styles.statusDisconnected
             }`}
           />
-          <span className="text-sm text-gray-600 dark:text-gray-400">
+          <span className={styles.statusText}>
             Server: {serverConnected ? 'Connected' : 'Disconnected'}
           </span>
         </div>
 
         {/* Error Display */}
         {error && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg text-sm text-red-600 dark:text-red-300 mb-4">
+          <div className={styles.errorContainer}>
             {error}
           </div>
         )}
@@ -59,7 +60,7 @@ export default function Home() {
 
   return (
     <Layout sidebar={sidebar}>
-      <div className="h-full p-4">
+      <div className={styles.viewerContainer}>
         <PointCloudViewer />
       </div>
     </Layout>
