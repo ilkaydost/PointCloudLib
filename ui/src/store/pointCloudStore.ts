@@ -14,6 +14,7 @@ interface PointCloudState {
   fetchPoints: () => Promise<void>
   applyPassThroughFilter: (field: 'x'|'y'|'z', min:number, max:number) => Promise<void>
   applyVoxelGridFilter: (leafSize:number) => Promise<void>
+  applyRansacSegmentation: (distanceThreshold: number, maxIterations: number, extractInliers: boolean) => Promise<void>
   reset: () => void
 }
 
@@ -100,6 +101,21 @@ export const usePointCloudStore = create<PointCloudState>((set, get) => ({
         await get().fetchPoints()
       } else {
         set({ error: response.error || 'Filter failed' })
+      }
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Unknown error' })
+    } finally { set({ isLoading: false }) }
+  },
+
+  applyRansacSegmentation: async (distanceThreshold, maxIterations, extractInliers) => {
+    set({ isLoading: true, error: null })
+    try {
+      const response = await api.applyRansacSegmentation({ distanceThreshold, maxIterations, extractInliers })
+      if (response.success) {
+        set({ stats: response.stats })
+        await get().fetchPoints()
+      } else {
+        set({ error: response.error || 'RANSAC segmentation failed' })
       }
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Unknown error' })
