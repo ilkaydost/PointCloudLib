@@ -1,0 +1,64 @@
+.container {
+  @apply bg-gray-50 dark:bg-gray-700 rounded-md p-4 space-y-4;
+}
+
+.title {
+  @apply text-sm font-medium text-gray-900 dark:text-white;
+}
+
+.fieldGroup {
+  @apply space-y-2;
+}
+
+.label {
+  @apply block text-xs text-gray-600 dark:text-gray-300 mb-1;
+}
+
+.rangeInput {
+  @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-600;
+}
+
+.rangeLabels {
+  @apply flex justify-between text-xs text-gray-500 dark:text-gray-400;
+}
+
+.toggleContainer {
+  @apply flex items-center justify-between;
+}
+
+.toggleLabel {
+  @apply text-xs text-gray-600 dark:text-gray-300;
+}
+
+.toggleButton {
+  @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors;
+}
+
+.toggleButtonOn {
+  @apply bg-blue-600;
+}
+
+.toggleButtonOff {
+  @apply bg-gray-300 dark:bg-gray-600;
+}
+
+.toggleThumb {
+  @apply inline-block h-4 w-4 transform rounded-full bg-white transition-transform;
+}
+
+.toggleThumbOn {
+  @apply translate-x-6;
+}
+
+.toggleThumbOff {
+  @apply translate-x-1;
+}
+
+.applyButton {
+  @apply w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 
+    disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium;
+}
+
+.info {
+  @apply text-xs text-gray-500 dark:text-gray-400;
+}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { usePointCloudStore } from '../../store/pointCloudStore';
+import styles from './css/VoxelGridControls.module.css';
 
 export function VoxelGridControls() {
   const applyVoxelGridFilter = usePointCloudStore((state) => state.applyVoxelGridFilter);
@@ -22,14 +23,14 @@ export function VoxelGridControls() {
   };
 
   return (
-    <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
-      <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+    <div className={styles.container}>
+      <h4 className={styles.title}>
         VoxelGrid Filter Settings
       </h4>
 
       {/* Leaf Size */}
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>
           Leaf Size (voxel dimension)
         </label>
         <input
@@ -38,27 +39,27 @@ export function VoxelGridControls() {
           min="0.001"
           value={leafSize}
           onChange={(e) => setLeafSize(parseFloat(e.target.value))}
-          className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-800 dark:border-gray-600"
+          className={styles.input}
           placeholder="Leaf size"
         />
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className={styles.hint}>
           Smaller values = more points (less downsampling)
         </p>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 pt-2">
+      <div className={styles.actions}>
         <button
           onClick={handleApply}
           disabled={isLoading}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className={styles.applyButton}
         >
           {isLoading ? 'Applying...' : 'Apply'}
         </button>
         <button
           onClick={handleReset}
           disabled={isLoading}
-          className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50 transition-colors"
+          className={styles.resetButton}
         >
           Reset
         </button>

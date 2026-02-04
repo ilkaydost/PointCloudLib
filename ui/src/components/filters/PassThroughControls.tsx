@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { usePointCloudStore } from '../../store/pointCloudStore';
+import styles from './css/PassThroughControls.module.css';
 
 export function PassThroughControls() {
   const stats = usePointCloudStore((state) => state.stats);
@@ -40,23 +41,23 @@ export function PassThroughControls() {
   };
 
   return (
-    <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
-      <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+    <div className={styles.container}>
+      <h4 className={styles.title}>
         PassThrough Filter Settings
       </h4>
 
       {/* X Axis */}
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>
           X Range
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={styles.inputGrid}>
           <input
             type="number"
             step="0.1"
             value={minX}
             onChange={(e) => setMinX(parseFloat(e.target.value))}
-            className="px-2 py-1 text-sm border rounded dark:bg-gray-800 dark:border-gray-600"
+            className={styles.input}
             placeholder="Min X"
           />
           <input
@@ -64,24 +65,24 @@ export function PassThroughControls() {
             step="0.1"
             value={maxX}
             onChange={(e) => setMaxX(parseFloat(e.target.value))}
-            className="px-2 py-1 text-sm border rounded dark:bg-gray-800 dark:border-gray-600"
+            className={styles.input}
             placeholder="Max X"
           />
         </div>
       </div>
 
       {/* Y Axis */}
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>
           Y Range
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={styles.inputGrid}>
           <input
             type="number"
             step="0.1"
             value={minY}
             onChange={(e) => setMinY(parseFloat(e.target.value))}
-            className="px-2 py-1 text-sm border rounded dark:bg-gray-800 dark:border-gray-600"
+            className={styles.input}
             placeholder="Min Y"
           />
           <input
@@ -89,24 +90,24 @@ export function PassThroughControls() {
             step="0.1"
             value={maxY}
             onChange={(e) => setMaxY(parseFloat(e.target.value))}
-            className="px-2 py-1 text-sm border rounded dark:bg-gray-800 dark:border-gray-600"
+            className={styles.input}
             placeholder="Max Y"
           />
         </div>
       </div>
 
       {/* Z Axis */}
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>
           Z Range
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={styles.inputGrid}>
           <input
             type="number"
             step="0.1"
             value={minZ}
             onChange={(e) => setMinZ(parseFloat(e.target.value))}
-            className="px-2 py-1 text-sm border rounded dark:bg-gray-800 dark:border-gray-600"
+            className={styles.input}
             placeholder="Min Z"
           />
           <input
@@ -114,25 +115,25 @@ export function PassThroughControls() {
             step="0.1"
             value={maxZ}
             onChange={(e) => setMaxZ(parseFloat(e.target.value))}
-            className="px-2 py-1 text-sm border rounded dark:bg-gray-800 dark:border-gray-600"
+            className={styles.input}
             placeholder="Max Z"
           />
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 pt-2">
+      <div className={styles.actions}>
         <button
           onClick={handleApply}
           disabled={isLoading}
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className={styles.applyButton}
         >
           {isLoading ? 'Applying...' : 'Apply'}
         </button>
         <button
           onClick={handleReset}
           disabled={isLoading}
-          className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50 transition-colors"
+          className={styles.resetButton}
         >
           Reset
         </button>

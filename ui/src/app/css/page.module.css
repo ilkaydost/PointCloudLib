@@ -1,0 +1,44 @@
+.sidebarContainer {
+  @apply space-y-4 p-4;
+}
+
+.header {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6;
+}
+
+.title {
+  @apply text-xl font-bold text-gray-900 dark:text-white mb-2;
+}
+
+.subtitle {
+  @apply text-sm text-gray-600 dark:text-gray-400 mb-4;
+}
+
+.statusContainer {
+  @apply flex items-center gap-2 mb-4;
+}
+
+.statusDot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.statusConnected {
+  @apply bg-green-500;
+}
+
+.statusDisconnected {
+  @apply bg-red-500;
+}
+
+.statusText {
+  @apply text-sm text-gray-600 dark:text-gray-400;
+}
+
+.errorContainer {
+  @apply p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 
+    rounded-lg text-sm text-red-600 dark:text-red-300 mb-4;
+}
+
+.viewerContainer {
+  @apply h-full p-4;
+}

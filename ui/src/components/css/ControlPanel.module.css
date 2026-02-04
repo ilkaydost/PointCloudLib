@@ -1,0 +1,59 @@
+.container {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-6;
+}
+
+.title {
+  @apply text-lg font-semibold text-gray-900 dark:text-white mb-4;
+}
+
+.statsContainer {
+  @apply bg-gray-50 dark:bg-gray-700 rounded-md p-4 mb-4 space-y-2 text-sm;
+}
+
+.statRow {
+  @apply flex justify-between;
+}
+
+.statLabel {
+  @apply text-gray-600 dark:text-gray-300;
+}
+
+.statValue {
+  @apply font-mono text-gray-900 dark:text-white;
+}
+
+.statValueSmall {
+  @apply font-mono text-xs text-gray-900 dark:text-white;
+}
+
+.section {
+  @apply space-y-6;
+}
+
+.sectionTitle {
+  @apply text-sm font-medium text-gray-700 dark:text-gray-300 mb-3;
+}
+
+.buttonList {
+  @apply space-y-2;
+}
+
+.filterButton {
+  @apply w-full px-4 py-2 text-left rounded-md transition-colors
+    bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 
+    hover:bg-gray-200 dark:hover:bg-gray-600;
+}
+
+.filterButtonActive {
+  @apply bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100;
+}
+
+.segmentButton {
+  @apply w-full px-4 py-2 text-left rounded-md transition-colors
+    bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 
+    hover:bg-gray-200 dark:hover:bg-gray-600;
+}
+
+.segmentButtonActive {
+  @apply bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100;
+}
