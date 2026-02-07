@@ -19,6 +19,14 @@ export interface RansacResponse {
   error?: string
 }
 
+export interface RegionGrowingResponse {
+  success: boolean
+  stats: PointCloudStats
+  numClusters: number
+  clusters?: Array<{ id: number; pointCount: number }>
+  error?: string
+}
+
 export const api = {
   async healthCheck(): Promise<boolean> {
     try {
@@ -84,6 +92,22 @@ export const api = {
     extractInliers: boolean
   }) {
     const res = await fetch(`${API_BASE}/segment/ransac`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    })
+    return res.json()
+  },
+
+  async applyRegionGrowing(config: {
+    smoothnessThreshold: number
+    curvatureThreshold: number
+    minClusterSize: number
+    maxClusterSize: number
+    numberOfNeighbours: number
+    normalKSearch: number
+  }): Promise<RegionGrowingResponse> {
+    const res = await fetch(`${API_BASE}/segment/regiongrowing`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(config),

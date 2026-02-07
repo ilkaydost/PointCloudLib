@@ -317,6 +317,77 @@ void HttpServer::setupRoutes() {
 			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
 		}
 	});
+
+	// Region growing segmentation
+	m_server_.Post("/api/segment/regiongrowing", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			auto cloud = getCurrentCloud();
+            
+			if (!cloud || cloud->empty()) {
+				res.status = 404;
+				res.set_content(R"({"error":"No point cloud loaded"})", "application/json");
+				return;
+			}
+            
+			auto body = json::parse(req.body);
+            
+			// Parse Region Growing config
+			segmentation::RegionGrowingConfig config;
+			if (body.contains("smoothnessThreshold")) {
+				config.smoothness_threshold = body["smoothnessThreshold"].get<float>();
+			}
+			if (body.contains("curvatureThreshold")) {
+				config.curvature_threshold = body["curvatureThreshold"].get<float>();
+			}
+			if (body.contains("minClusterSize")) {
+				config.min_cluster_size = body["minClusterSize"].get<int>();
+			}
+			if (body.contains("maxClusterSize")) {
+				config.max_cluster_size = body["maxClusterSize"].get<int>();
+			}
+			if (body.contains("numberOfNeighbours")) {
+				config.number_of_neighbours = body["numberOfNeighbours"].get<int>();
+			}
+			if (body.contains("normalKSearch")) {
+				config.normal_k_search = body["normalKSearch"].get<int>();
+			}
+            
+			segmentation::RegionGrowingSegmenter segmenter(config);
+			auto seg_result = segmenter.segment(cloud);
+            
+			if (!seg_result.success) {
+				res.status = 400;
+				res.set_content(json{{"error", seg_result.error_message}}.dump(), "application/json");
+				return;
+			}
+            
+			// Set the colored cloud as current
+			setCurrentCloud(seg_result.colored_cloud);
+            
+			auto stats = io::calculateStats(seg_result.colored_cloud);
+			
+			// Build cluster info array
+			json cluster_info = json::array();
+			for (size_t i = 0; i < seg_result.clusters.size(); ++i) {
+				cluster_info.push_back({
+					{"id", i},
+					{"pointCount", seg_result.clusters[i]->size()}
+				});
+			}
+			
+			json response = {
+				{"success", true},
+				{"stats", statsToJson(stats)},
+				{"numClusters", seg_result.num_clusters},
+				{"clusters", cluster_info}
+			};
+			res.set_content(response.dump(), "application/json");
+            
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
 }
 
 void HttpServer::start() {
