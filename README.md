@@ -17,7 +17,8 @@ UI (Frontend) Side [In powershell]
 
 Yey! (Visuals)
 
-![alt text](frontend_image.png)
+![demo gif](pointcloudlibDemo.gif)
+<!-- ![alt text](frontend_image.png) -->
 ![ply colorful image](frontEnd-img.png)
 
 Server (Backend) Side

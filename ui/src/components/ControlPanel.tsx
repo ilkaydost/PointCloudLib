@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { PassThroughControls } from './filters/PassThroughControls';
 import { VoxelGridControls } from './filters/VoxelGridControls';
 import { RansacControls } from './segmentation/RansacControls';
+import { RegionGrowingControls } from './segmentation/RegionGrowingControls';
 import { usePointCloudStore } from '../store/pointCloudStore';
 import styles from './css/ControlPanel.module.css';
 
 export function ControlPanel() {
-  const [activeFilter, setActiveFilter] = useState<'passthrough' | 'voxelgrid' | 'ransac' | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'passthrough' | 'voxelgrid' | 'ransac' | 'regiongrowing' | null>(null);
   const stats = usePointCloudStore((state) => state.stats);
 
   return (
@@ -88,6 +89,14 @@ export function ControlPanel() {
           >
             RANSAC Plane
           </button>
+          <button
+            onClick={() => setActiveFilter(activeFilter === 'regiongrowing' ? null : 'regiongrowing')}
+            className={activeFilter === 'regiongrowing' 
+              ? `${styles.segmentButton} ${styles.segmentButtonActive}` 
+              : styles.segmentButton}
+          >
+            Region Growing
+          </button>
         </div>
       </div>
 
@@ -95,6 +104,7 @@ export function ControlPanel() {
       {activeFilter === 'passthrough' && <PassThroughControls />}
       {activeFilter === 'voxelgrid' && <VoxelGridControls />}
       {activeFilter === 'ransac' && <RansacControls />}
+      {activeFilter === 'regiongrowing' && <RegionGrowingControls />}
     </div>
   );
 }
