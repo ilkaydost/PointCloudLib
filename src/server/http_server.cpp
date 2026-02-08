@@ -4,6 +4,7 @@
 #include "core/io/point_cloud_io.hpp"
 #include "core/filters/filters.hpp"
 #include "core/segmentation/segmentation.hpp"
+#include "core/features/normal_estimator.hpp"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -210,6 +211,12 @@ void HttpServer::setupRoutes() {
 		}
         
 		auto colors = cloudToColorArray(cloud);
+		std::cout << "GET /api/points/colors: Sending " << colors.size() << " bytes for " 
+		          << cloud->size() << " points" << std::endl;
+		if (colors.size() >= 3) {
+			std::cout << "First color: R=" << (int)colors[0] << " G=" << (int)colors[1] << " B=" << (int)colors[2] << std::endl;
+		}
+		
 		res.set_content(
 			std::string(reinterpret_cast<const char*>(colors.data()), colors.size()),
 			"application/octet-stream"
@@ -364,6 +371,14 @@ void HttpServer::setupRoutes() {
 			// Set the colored cloud as current
 			setCurrentCloud(seg_result.colored_cloud);
             
+			// Debug output
+			std::cout << "Region Growing completed: " << seg_result.num_clusters << " clusters, " 
+			          << seg_result.colored_cloud->size() << " points" << std::endl;
+			if (!seg_result.colored_cloud->empty()) {
+				const auto& pt = seg_result.colored_cloud->points[0];
+				std::cout << "First point color: R=" << (int)pt.r << " G=" << (int)pt.g << " B=" << (int)pt.b << std::endl;
+			}
+            
 			auto stats = io::calculateStats(seg_result.colored_cloud);
 			
 			// Build cluster info array
@@ -383,6 +398,168 @@ void HttpServer::setupRoutes() {
 			};
 			res.set_content(response.dump(), "application/json");
             
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// Normal estimation
+	m_server_.Post("/api/features/normals", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			auto cloud = getCurrentCloud();
+			if (!cloud || cloud->empty()) {
+				res.status = 404;
+				res.set_content(R"({"error":"No point cloud loaded"})", "application/json");
+				return;
+			}
+
+			auto body = json::parse(req.body);
+
+			pointcloud::features::NormalEstimatorConfig config;
+			if (body.contains("kSearch")) config.k_search = body["kSearch"].get<int>();
+			if (body.contains("radiusSearch")) config.radius_search = body["radiusSearch"].get<float>();
+
+			pointcloud::features::NormalEstimator estimator(config);
+			auto ne_result = estimator.compute(cloud);
+			if (!ne_result.success) {
+				res.status = 400;
+				res.set_content(json{{"error", ne_result.error_message}}.dump(), "application/json");
+				return;
+			}
+
+			// Create colored cloud from normals for visualization
+			PointCloudPtr colored = boost::make_shared<PointCloud>();
+			colored->resize(cloud->size());
+			for (size_t i = 0; i < cloud->size(); ++i) {
+				const auto& pt = (*cloud)[i];
+				pcl::PointXYZRGB cp;
+				cp.x = pt.x; cp.y = pt.y; cp.z = pt.z;
+				// Map normal components (-1..1) -> (0..255)
+				const auto& n = ne_result.normals->at(i);
+				int r = static_cast<int>((n.normal_x + 1.0f) * 0.5f * 255.0f);
+				int g = static_cast<int>((n.normal_y + 1.0f) * 0.5f * 255.0f);
+				int b = static_cast<int>((n.normal_z + 1.0f) * 0.5f * 255.0f);
+				if (r < 0) r = 0; if (r > 255) r = 255;
+				if (g < 0) g = 0; if (g > 255) g = 255;
+				if (b < 0) b = 0; if (b > 255) b = 255;
+				cp.r = static_cast<uint8_t>(r);
+				cp.g = static_cast<uint8_t>(g);
+				cp.b = static_cast<uint8_t>(b);
+				(*colored)[i] = cp;
+			}
+
+			setCurrentCloud(colored);
+			auto stats = io::calculateStats(colored);
+			json response = { {"success", true}, {"stats", statsToJson(stats)} };
+			res.set_content(response.dump(), "application/json");
+
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// Get normals as binary Float32Array (nx,ny,nz for each point)
+	m_server_.Get("/api/features/normals/binary", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			auto cloud = getCurrentCloud();
+			if (!cloud || cloud->empty()) {
+				res.status = 404;
+				res.set_content(R"({"error":"No point cloud loaded"})", "application/json");
+				return;
+			}
+
+			// Parse optional query params
+			int kSearch = 30;
+			float radiusSearch = 0.0f;
+		if (req.has_param("kSearch")) {
+			kSearch = std::stoi(req.get_param_value("kSearch"));
+		}
+		if (req.has_param("radiusSearch")) {
+			radiusSearch = std::stof(req.get_param_value("radiusSearch"));
+		}
+
+		// Compute normals
+		pointcloud::features::NormalEstimatorConfig cfg;
+		cfg.k_search = kSearch;
+		cfg.radius_search = radiusSearch;
+		pointcloud::features::NormalEstimator estimator(cfg);
+		auto ne_result = estimator.compute(cloud);
+		if (!ne_result.success) {
+			res.status = 500;
+			res.set_content(json{{"error", ne_result.error_message}}.dump(), "application/json");
+			return;
+		}
+
+		// Build binary buffer
+		std::vector<float> normals;
+		normals.reserve(ne_result.normals->size() * 3);
+		for (const auto& n : *ne_result.normals) {
+			normals.push_back(n.normal_x);
+			normals.push_back(n.normal_y);
+			normals.push_back(n.normal_z);
+		}
+
+		res.set_content(
+			std::string(reinterpret_cast<const char*>(normals.data()), normals.size() * sizeof(float)),
+			"application/octet-stream"
+		);
+
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// Get binary points and colors after segmentation (region growing or plane)
+	m_server_.Get("/api/points/binary", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			auto cloud = getCurrentCloud();
+			if (!cloud || cloud->empty()) {
+				res.status = 404;
+				res.set_content(R"({"error":"No point cloud loaded"})", "application/json");
+				return;
+			}
+
+			std::vector<float> positions;
+			std::vector<uint8_t> colors;
+			positions.reserve(cloud->size() * 3);
+			colors.reserve(cloud->size() * 3);
+
+			for (const auto& point : cloud->points) {
+				positions.push_back(point.x);
+				positions.push_back(point.y);
+				positions.push_back(point.z);
+				colors.push_back(point.r);
+				colors.push_back(point.g);
+				colors.push_back(point.b);
+			}
+
+			// Pack positions and colors into a single buffer
+			// Format: positions_size (4 bytes) | positions_data | colors_data
+			std::vector<uint8_t> buffer;
+			uint32_t positions_size = static_cast<uint32_t>(positions.size() * sizeof(float));
+			buffer.reserve(4 + positions_size + colors.size());
+
+			// Write positions size
+			buffer.insert(buffer.end(), 
+				reinterpret_cast<const uint8_t*>(&positions_size), 
+				reinterpret_cast<const uint8_t*>(&positions_size) + sizeof(uint32_t));
+
+			// Write positions data
+			buffer.insert(buffer.end(), 
+				reinterpret_cast<const uint8_t*>(positions.data()), 
+				reinterpret_cast<const uint8_t*>(positions.data()) + positions_size);
+
+			// Write colors data
+			buffer.insert(buffer.end(), colors.begin(), colors.end());
+
+			res.set_content(
+				std::string(reinterpret_cast<const char*>(buffer.data()), buffer.size()),
+				"application/octet-stream"
+			);
+
 		} catch (const std::exception& e) {
 			res.status = 500;
 			res.set_content(json{{"error", e.what()}}.dump(), "application/json");

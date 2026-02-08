@@ -4,6 +4,26 @@ import { useState } from 'react';
 import { usePointCloudStore } from '../../store/pointCloudStore';
 import styles from './css/RegionGrowingControls.module.css';
 
+/**
+ * RegionGrowingControls - A React component that provides controls for region growing segmentation.
+ * 
+ * Region growing is a segmentation technique that groups neighboring points based on smoothness and curvature criteria,
+ * expanding clusters from seed points to adjacent points that meet the threshold conditions.
+ * 
+ * @component
+ * @returns {JSX.Element} A form with range sliders for configuring region growing parameters including:
+ * - smoothnessThreshold: Angular threshold for normal direction similarity (1-30 degrees)
+ * - curvatureThreshold: Curvature-based smoothness criterion (0.1-5.0)
+ * - minClusterSize: Minimum points required for a valid cluster (10-500)
+ * - maxClusterSize: Maximum points allowed in a cluster
+ * - numberOfNeighbours: KNN search radius (10-100 neighbors)
+ * - normalKSearch: KNN for surface normal estimation (10-100 neighbors)
+ * 
+ * @example
+ * ```tsx
+ * <RegionGrowingControls />
+ * ```
+ */
 export function RegionGrowingControls() {
   const [smoothnessThreshold, setSmoothnessThreshold] = useState(5.0);
   const [curvatureThreshold, setCurvatureThreshold] = useState(1.0);
@@ -146,10 +166,16 @@ export function RegionGrowingControls() {
       <button
         onClick={handleApply}
         disabled={isLoading}
-        className={`${styles.button} ${isLoading ? styles.buttonDisabled : ''}`}
+        className={styles.applyButton}
+
+        // className={`${styles.button} ${isLoading ? styles.buttonDisabled : ''}`}
       >
         {isLoading ? 'Processing...' : 'Apply Region Growing'}
       </button>
+      {/* Info */}
+      <p className={styles.info}>
+        Region growing segments the point cloud by grouping neighboring points with similar surface normals and curvature, expanding clusters from seed points.
+      </p>
     </div>
   );
 }
