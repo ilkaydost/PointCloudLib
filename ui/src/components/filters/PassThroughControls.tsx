@@ -138,6 +138,10 @@ export function PassThroughControls() {
           Reset
         </button>
       </div>
+      {/* Info */}
+      <p className={styles.info}>
+        PassThrough filter limits the point cloud to a specified range along the X, Y, and Z axes.
+      </p>
     </div>
   );
 }

@@ -16,7 +16,7 @@ UI (Frontend) Side [In powershell]
 - ```In web browser paste it-> http://localhost:3000 ```
 
 Yey! (Visuals)
-
+![region growing](PointCloudLibRG.png)
 ![demo gif](pointcloudlibDemo.gif)
 <!-- ![alt text](frontend_image.png) -->
 ![ply colorful image](frontEnd-img.png)

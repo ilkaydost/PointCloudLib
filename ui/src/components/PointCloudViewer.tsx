@@ -8,10 +8,43 @@ import { usePointCloudStore } from '../store/pointCloudStore';
 import * as THREE from 'three';
 import styles from './css/PointCloudViewer.module.css';
 
+function NormalsLines({ positions, normals, length = 0.05 }: { positions: Float32Array; normals: Float32Array; length?: number }) {
+  // Build line segments: for each point create start(x,y,z) and end(x+nx*L, y+ny*L, z+nz*L)
+  const count = positions.length / 3;
+  const lineVerts = new Float32Array(count * 2 * 3);
+  for (let i = 0; i < count; i++) {
+    const px = positions[i * 3 + 0];
+    const py = positions[i * 3 + 1];
+    const pz = positions[i * 3 + 2];
+    const nx = normals[i * 3 + 0];
+    const ny = normals[i * 3 + 1];
+    const nz = normals[i * 3 + 2];
+    // start
+    lineVerts[i * 6 + 0] = px;
+    lineVerts[i * 6 + 1] = py;
+    lineVerts[i * 6 + 2] = pz;
+    // end
+    lineVerts[i * 6 + 3] = px + nx * length;
+    lineVerts[i * 6 + 4] = py + ny * length;
+    lineVerts[i * 6 + 5] = pz + nz * length;
+  }
+
+  return (
+    <lineSegments>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" array={lineVerts} count={lineVerts.length / 3} itemSize={3} />
+      </bufferGeometry>
+      <lineBasicMaterial color={0x00ffff} linewidth={1} />
+    </lineSegments>
+  );
+}
+
 // Component to auto-fit camera to point cloud bounds
 function CameraController() {
   const { camera } = useThree();
   const stats = usePointCloudStore((state) => state.stats);
+  const normals = usePointCloudStore((state) => state.normals);
+  const showNormals = usePointCloudStore((state) => state.showNormals);
   const controlsRef = useRef<any>(null);
 
   useEffect(() => {
@@ -19,6 +52,7 @@ function CameraController() {
       const { minX, maxX, minY, maxY, minZ, maxZ } = stats.bounds;
       
       // Calculate center of the point cloud
+      // TO:DO - This currently centers on the bounding box center, which may not be ideal for very sparse point clouds. Consider implementing a more robust method if needed.
       const centerX = (minX + maxX) / 2;
       const centerY = (minY + maxY) / 2;
       const centerZ = (minZ + maxZ) / 2;
@@ -75,6 +109,8 @@ export function PointCloudViewer() {
   const positions = usePointCloudStore((state) => state.positions);
   const colors = usePointCloudStore((state) => state.colors);
   const stats = usePointCloudStore((state) => state.stats);
+  const normals = usePointCloudStore((state) => state.normals);
+  const showNormals = usePointCloudStore((state) => state.showNormals);
 
   // Calculate grid size based on point cloud bounds
   const gridSize = stats?.bounds 
@@ -98,6 +134,10 @@ export function PointCloudViewer() {
         
         {/* Point Cloud */}
         {positions && <PointCloud positions={positions} colors={colors} />}
+        {/* Normals visualization */}
+        {positions && normals && showNormals && normals.length === positions.length && (
+          <NormalsLines positions={positions} normals={normals} length={(stats ? Math.max(stats.bounds.maxX - stats.bounds.minX, stats.bounds.maxY - stats.bounds.minY, stats.bounds.maxZ - stats.bounds.minZ) : 1) * 0.02} />
+        )}
         
         {/* Grid helper - scaled to point cloud size */}
         <gridHelper args={[gridSize, 20]} />

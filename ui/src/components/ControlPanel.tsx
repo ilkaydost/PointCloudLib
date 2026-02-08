@@ -5,11 +5,12 @@ import { PassThroughControls } from './filters/PassThroughControls';
 import { VoxelGridControls } from './filters/VoxelGridControls';
 import { RansacControls } from './segmentation/RansacControls';
 import { RegionGrowingControls } from './segmentation/RegionGrowingControls';
+import { NormalEstimatorControls } from './features/NormalEstimatorControls';
 import { usePointCloudStore } from '../store/pointCloudStore';
 import styles from './css/ControlPanel.module.css';
 
 export function ControlPanel() {
-  const [activeFilter, setActiveFilter] = useState<'passthrough' | 'voxelgrid' | 'ransac' | 'regiongrowing' | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'passthrough' | 'voxelgrid' | 'ransac' | 'regiongrowing' | 'normals' | null>(null);
   const stats = usePointCloudStore((state) => state.stats);
 
   return (
@@ -48,6 +49,23 @@ export function ControlPanel() {
             </div>
           </div>
         )}
+      </div>
+      
+      {/* Features */}
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>
+          Features
+        </h3>
+        <div className={styles.buttonList}>
+          <button
+            onClick={() => setActiveFilter(activeFilter === 'normals' ? null : 'normals')}
+            className={activeFilter === 'normals' 
+              ? `${styles.featureButton} ${styles.featureButtonActive}` 
+              : styles.featureButton}
+          >
+            Normal Estimation
+          </button>
+        </div>
       </div>
 
       {/* Filter Selection */}
@@ -105,6 +123,7 @@ export function ControlPanel() {
       {activeFilter === 'voxelgrid' && <VoxelGridControls />}
       {activeFilter === 'ransac' && <RansacControls />}
       {activeFilter === 'regiongrowing' && <RegionGrowingControls />}
+      {activeFilter === 'normals' && <NormalEstimatorControls />}
     </div>
   );
 }

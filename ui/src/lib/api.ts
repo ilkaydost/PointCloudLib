@@ -27,6 +27,12 @@ export interface RegionGrowingResponse {
   error?: string
 }
 
+export interface NormalEstimationResponse {
+  success: boolean
+  stats: PointCloudStats
+  error?: string
+}
+
 export const api = {
   async healthCheck(): Promise<boolean> {
     try {
@@ -66,6 +72,15 @@ export const api = {
     const res = await fetch(`${API_BASE}/points/colors`)
     const buffer = await res.arrayBuffer()
     return new Uint8Array(buffer)
+  },
+
+  async getNormalsBinary(kSearch?: number, radiusSearch?: number): Promise<Float32Array> {
+    const url = new URL(`${API_BASE}/features/normals/binary`);
+    if (kSearch !== undefined) url.searchParams.set('kSearch', String(kSearch));
+    if (radiusSearch !== undefined) url.searchParams.set('radiusSearch', String(radiusSearch));
+    const res = await fetch(url.toString());
+    const buffer = await res.arrayBuffer();
+    return new Float32Array(buffer);
   },
 
   async applyPassThroughFilter(config: any) {
@@ -108,6 +123,18 @@ export const api = {
     normalKSearch: number
   }): Promise<RegionGrowingResponse> {
     const res = await fetch(`${API_BASE}/segment/regiongrowing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    })
+    return res.json()
+  },
+
+  async applyNormalEstimation(config: {
+    kSearch?: number
+    radiusSearch?: number
+  }): Promise<NormalEstimationResponse> {
+    const res = await fetch(`${API_BASE}/features/normals`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(config),

@@ -64,6 +64,10 @@ export function VoxelGridControls() {
           Reset
         </button>
       </div>
+      {/* Info */}
+      <p className={styles.info}>
+        VoxelGrid filter downsamples the point cloud by creating a 3D voxel grid and replacing points within each voxel with their centroid.
+      </p>
     </div>
   );
 }
