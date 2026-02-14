@@ -9,7 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_compile_options(-fPIC)
 
 # Find dependencies
-find_package(PCL REQUIRED COMPONENTS common io filters features segmentation)
+find_package(PCL REQUIRED COMPONENTS common io filters features segmentation registration)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 #find_package(GTest CONFIG REQUIRED)
@@ -34,6 +34,7 @@ add_library(pointcloud_core STATIC
     src/core/segmentation/ransac_plane_segmenter.cpp
     src/core/segmentation/region_growing_segmenter.cpp
     src/core/features/normal_estimator.cpp
+    src/core/registration/icp_registration.cpp
 )
 
 target_include_directories(pointcloud_core PUBLIC
