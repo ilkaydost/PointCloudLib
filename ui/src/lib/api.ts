@@ -33,6 +33,24 @@ export interface NormalEstimationResponse {
   error?: string
 }
 
+export interface ICPSetupResponse {
+  success: boolean
+  sourcePoints: number
+  targetPoints: number
+  error?: string
+}
+
+export interface ICPAlignResponse {
+  success: boolean
+  converged: boolean
+  fitnessScore: number
+  iterationsDone: number
+  transformation: number[][]
+  cumulativeTransformation: number[][]
+  stats: PointCloudStats
+  error?: string
+}
+
 export const api = {
   async healthCheck(): Promise<boolean> {
     try {
@@ -138,6 +156,49 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(config),
+    })
+    return res.json()
+  },
+
+  async setupICP(config: {
+    mode?: string
+    applyTransform?: boolean
+    rotationAngle?: number
+    translationZ?: number
+    maxIterations?: number
+    maxCorrespondenceDistance?: number
+    transformationEpsilon?: number
+    euclideanFitnessEpsilon?: number
+  }): Promise<ICPSetupResponse> {
+    const res = await fetch(`${API_BASE}/icp/setup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    })
+    return res.json()
+  },
+
+  async alignICP(iterations: number = 1): Promise<ICPAlignResponse> {
+    const res = await fetch(`${API_BASE}/icp/align`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ iterations }),
+    })
+    return res.json()
+  },
+
+  async iterateICP(): Promise<ICPAlignResponse> {
+    const res = await fetch(`${API_BASE}/icp/iterate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    return res.json()
+  },
+
+  async resetICP(): Promise<{ success: boolean }> {
+    const res = await fetch(`${API_BASE}/icp/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
     })
     return res.json()
   }

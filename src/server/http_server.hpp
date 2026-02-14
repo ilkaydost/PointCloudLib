@@ -12,6 +12,10 @@ template<typename PointT> class PointCloud;
 struct PointXYZRGB;
 }
 
+namespace pcl_wrapper {
+class ICPRegistration;
+}
+
 namespace pointcloud::server {
 
 // Use opaque pointer type to avoid Eigen header issues
@@ -46,6 +50,12 @@ private:
 	std::atomic<bool> m_running_{false};
 	PointCloudPtr m_p_current_cloud_;
 	mutable std::mutex m_cloud_mutex_;
+	
+	// ICP registration state
+	std::unique_ptr<pcl_wrapper::ICPRegistration> m_icp_;
+	PointCloudPtr m_source_cloud_;
+	PointCloudPtr m_target_cloud_;
+	mutable std::mutex m_icp_mutex_;
 };
 
 } // namespace pointcloud::server

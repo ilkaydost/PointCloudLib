@@ -10,6 +10,11 @@ interface PointCloudState {
   error: string | null
   showNormals: boolean
   serverConnected: boolean
+  // ICP state
+  icpSetup: boolean
+  icpIterations: number
+  icpFitnessScore: number | null
+  icpTransformation: number[][] | null
   checkServerHealth: () => Promise<void>
   loadPointCloud: (filePath: string) => Promise<void>
   uploadPointCloud: (file: File) => Promise<void>
@@ -27,6 +32,19 @@ interface PointCloudState {
     normalKSearch: number
   }) => Promise<void>
   applyNormalEstimation: (config: { kSearch?: number; radiusSearch?: number }) => Promise<void>
+  setupICP: (config: {
+    mode?: string
+    applyTransform?: boolean
+    rotationAngle?: number
+    translationZ?: number
+    maxIterations?: number
+    maxCorrespondenceDistance?: number
+    transformationEpsilon?: number
+    euclideanFitnessEpsilon?: number
+  }) => Promise<void>
+  alignICP: (iterations: number) => Promise<void>
+  iterateICP: () => Promise<void>
+  resetICP: () => Promise<void>
   setShowNormals: (v: boolean) => void
   reset: () => void
 }
@@ -40,6 +58,10 @@ export const usePointCloudStore = create<PointCloudState>((set, get) => ({
   error: null,
   showNormals: false,
   serverConnected: false,
+  icpSetup: false,
+  icpIterations: 0,
+  icpFitnessScore: null,
+  icpTransformation: null,
 
   checkServerHealth: async () => {
     const connected = await api.healthCheck()
@@ -178,8 +200,94 @@ export const usePointCloudStore = create<PointCloudState>((set, get) => ({
     } finally { set({ isLoading: false }) }
   },
 
+  setupICP: async (config) => {
+    set({ isLoading: true, error: null })
+    try {
+      const response = await api.setupICP(config)
+      if (response.success) {
+        set({ 
+          icpSetup: true,
+          icpIterations: 0,
+          icpFitnessScore: null,
+          icpTransformation: null 
+        })
+        // Fetch points to display transformed source cloud
+        await get().fetchPoints()
+      } else {
+        set({ error: response.error || 'ICP setup failed' })
+      }
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Unknown error' })
+    } finally { set({ isLoading: false }) }
+  },
+
+  alignICP: async (iterations) => {
+    set({ isLoading: true, error: null })
+    try {
+      const response = await api.alignICP(iterations)
+      if (response.success && response.converged) {
+        set({ 
+          stats: response.stats,
+          icpIterations: response.iterationsDone,
+          icpFitnessScore: response.fitnessScore,
+          icpTransformation: response.cumulativeTransformation
+        })
+        await get().fetchPoints()
+      } else {
+        set({ error: response.error || 'ICP alignment failed' })
+      }
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Unknown error' })
+    } finally { set({ isLoading: false }) }
+  },
+
+  iterateICP: async () => {
+    set({ isLoading: true, error: null })
+    try {
+      const response = await api.iterateICP()
+      if (response.success && response.converged) {
+        set({ 
+          stats: response.stats,
+          icpIterations: response.iterationsDone,
+          icpFitnessScore: response.fitnessScore,
+          icpTransformation: response.cumulativeTransformation
+        })
+        await get().fetchPoints()
+      } else {
+        set({ error: response.error || 'ICP iteration failed' })
+      }
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Unknown error' })
+    } finally { set({ isLoading: false }) }
+  },
+
+  resetICP: async () => {
+    try {
+      await api.resetICP()
+      set({ 
+        icpSetup: false,
+        icpIterations: 0,
+        icpFitnessScore: null,
+        icpTransformation: null
+      })
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Failed to reset ICP' })
+    }
+  },
+
   setShowNormals: (v) => set({ showNormals: v }),
 
-  reset: () => set({ positions: null, colors: null, normals: null, stats: null, error: null, showNormals: false }),
+  reset: () => set({ 
+    positions: null, 
+    colors: null, 
+    normals: null, 
+    stats: null, 
+    error: null, 
+    showNormals: false,
+    icpSetup: false,
+    icpIterations: 0,
+    icpFitnessScore: null,
+    icpTransformation: null
+  }),
 }))
 

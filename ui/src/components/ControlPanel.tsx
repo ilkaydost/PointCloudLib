@@ -6,11 +6,12 @@ import { VoxelGridControls } from './filters/VoxelGridControls';
 import { RansacControls } from './segmentation/RansacControls';
 import { RegionGrowingControls } from './segmentation/RegionGrowingControls';
 import { NormalEstimatorControls } from './features/NormalEstimatorControls';
+import ICPRegistrationControls from './registration/ICPRegistrationControls';
 import { usePointCloudStore } from '../store/pointCloudStore';
 import styles from './css/ControlPanel.module.css';
 
 export function ControlPanel() {
-  const [activeFilter, setActiveFilter] = useState<'passthrough' | 'voxelgrid' | 'ransac' | 'regiongrowing' | 'normals' | null>(null);
+  const [activeFilter, setActiveFilter] = useState<'passthrough' | 'voxelgrid' | 'ransac' | 'regiongrowing' | 'normals' | 'icp' | null>(null);
   const stats = usePointCloudStore((state) => state.stats);
 
   return (
@@ -118,12 +119,30 @@ export function ControlPanel() {
         </div>
       </div>
 
+      {/* Registration */}
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>
+          Registration
+        </h3>
+        <div className={styles.buttonList}>
+          <button
+            onClick={() => setActiveFilter(activeFilter === 'icp' ? null : 'icp')}
+            className={activeFilter === 'icp' 
+              ? `${styles.registrationButton} ${styles.registrationButtonActive}` 
+              : styles.registrationButton}
+          >
+            ICP Registration
+          </button>
+        </div>
+      </div>
+
       {/* Filter Controls */}
       {activeFilter === 'passthrough' && <PassThroughControls />}
       {activeFilter === 'voxelgrid' && <VoxelGridControls />}
       {activeFilter === 'ransac' && <RansacControls />}
       {activeFilter === 'regiongrowing' && <RegionGrowingControls />}
       {activeFilter === 'normals' && <NormalEstimatorControls />}
+      {activeFilter === 'icp' && <ICPRegistrationControls />}
     </div>
   );
 }

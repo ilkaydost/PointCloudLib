@@ -5,16 +5,18 @@
 #include "core/filters/filters.hpp"
 #include "core/segmentation/segmentation.hpp"
 #include "core/features/normal_estimator.hpp"
+#include "core/registration/icp_registration.hpp"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
+using namespace pointcloud;
 
 namespace pointcloud::server {
 
-HttpServer::HttpServer(int port) : m_port_(port) {
+HttpServer::HttpServer(int port) : m_port_(port), m_icp_(std::make_unique<pcl_wrapper::ICPRegistration>()) {
 	setupCORS();
 	setupRoutes();
 }
@@ -370,15 +372,7 @@ void HttpServer::setupRoutes() {
             
 			// Set the colored cloud as current
 			setCurrentCloud(seg_result.colored_cloud);
-            
-			// Debug output
-			std::cout << "Region Growing completed: " << seg_result.num_clusters << " clusters, " 
-			          << seg_result.colored_cloud->size() << " points" << std::endl;
-			if (!seg_result.colored_cloud->empty()) {
-				const auto& pt = seg_result.colored_cloud->points[0];
-				std::cout << "First point color: R=" << (int)pt.r << " G=" << (int)pt.g << " B=" << (int)pt.b << std::endl;
-			}
-            
+                        
 			auto stats = io::calculateStats(seg_result.colored_cloud);
 			
 			// Build cluster info array
@@ -560,6 +554,256 @@ void HttpServer::setupRoutes() {
 				"application/octet-stream"
 			);
 
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// ICP Registration - Set source and target clouds
+	m_server_.Post("/api/icp/setup", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			auto body = json::parse(req.body);
+			
+			// Get which clouds to use: "current" or upload new ones
+			std::string mode = body.value("mode", "current_as_target");
+			
+			std::lock_guard<std::mutex> lock(m_icp_mutex_);
+			
+			if (mode == "current_as_target") {
+				// Use current cloud as target, need to upload or specify source
+				auto cloud = getCurrentCloud();
+				if (!cloud || cloud->empty()) {
+					res.status = 404;
+					res.set_content(R"({"error":"No point cloud loaded as target"})", "application/json");
+					return;
+				}
+				m_target_cloud_ = cloud;
+				
+				// Create transformed version as source (for demo/testing)
+				if (body.contains("applyTransform") && body["applyTransform"].get<bool>()) {
+					m_source_cloud_ = boost::make_shared<PointCloud>(*cloud);
+					
+					// Apply a simple rotation and translation
+					double theta = body.value("rotationAngle", M_PI / 8);  // Default 22.5 degrees
+					double tz = body.value("translationZ", 0.4);
+					
+					Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+					transform(0, 0) = std::cos(theta);
+					transform(0, 1) = -std::sin(theta);
+					transform(1, 0) = std::sin(theta);
+					transform(1, 1) = std::cos(theta);
+					transform(2, 3) = tz;
+					
+					pcl::transformPointCloud(*cloud, *m_source_cloud_, transform);
+				}
+			} else if (mode == "separate_clouds") {
+				// Future: support loading two separate clouds
+				res.status = 400;
+				res.set_content(R"({"error":"Separate clouds mode not yet implemented"})", "application/json");
+				return;
+			}
+			
+			// Initialize ICP
+			if (!m_source_cloud_ || !m_target_cloud_) {
+				res.status = 400;
+				res.set_content(R"({"error":"Source and target clouds must be set"})", "application/json");
+				return;
+			}
+			
+			m_icp_->reset();
+			m_icp_->setInputSource(m_source_cloud_);
+			m_icp_->setInputTarget(m_target_cloud_);
+			
+			// Set ICP parameters
+			if (body.contains("maxIterations")) {
+				m_icp_->setMaximumIterations(body["maxIterations"].get<int>());
+			}
+			if (body.contains("maxCorrespondenceDistance")) {
+				m_icp_->setMaxCorrespondenceDistance(body["maxCorrespondenceDistance"].get<double>());
+			}
+			if (body.contains("transformationEpsilon")) {
+				m_icp_->setTransformationEpsilon(body["transformationEpsilon"].get<double>());
+			}
+			if (body.contains("euclideanFitnessEpsilon")) {
+				m_icp_->setEuclideanFitnessEpsilon(body["euclideanFitnessEpsilon"].get<double>());
+			}
+			
+			json response = {
+				{"success", true},
+				{"sourcePoints", m_source_cloud_->size()},
+				{"targetPoints", m_target_cloud_->size()}
+			};
+			res.set_content(response.dump(), "application/json");
+			
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// ICP Registration - Perform alignment
+	m_server_.Post("/api/icp/align", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			auto body = json::parse(req.body);
+			int iterations = body.value("iterations", 1);
+			
+			std::lock_guard<std::mutex> lock(m_icp_mutex_);
+			
+			if (!m_source_cloud_ || !m_target_cloud_) {
+				res.status = 400;
+				res.set_content(R"({"error":"ICP not initialized. Call /api/icp/setup first"})", "application/json");
+				return;
+			}
+			
+			m_icp_->setMaximumIterations(iterations);
+			PointCloudPtr aligned = boost::make_shared<PointCloud>();
+			auto result = m_icp_->align(aligned);
+			
+			if (!result.converged) {
+				res.status = 400;
+				res.set_content(json{{"error", result.error_message}}.dump(), "application/json");
+				return;
+			}
+			
+			// Update source cloud for next iteration
+			m_source_cloud_ = aligned;
+			setCurrentCloud(aligned);
+			
+			// Convert transformation matrix to JSON
+			json transform_json = json::array();
+			for (int i = 0; i < 4; ++i) {
+				json row = json::array();
+				for (int j = 0; j < 4; ++j) {
+					row.push_back(result.transformation_matrix(i, j));
+				}
+				transform_json.push_back(row);
+			}
+			
+			json cumulative_transform = json::array();
+			auto cumulative = m_icp_->getCumulativeTransformation();
+			for (int i = 0; i < 4; ++i) {
+				json row = json::array();
+				for (int j = 0; j < 4; ++j) {
+					row.push_back(cumulative(i, j));
+				}
+				cumulative_transform.push_back(row);
+			}
+			
+			auto stats = io::calculateStats(aligned);
+			json response = {
+				{"success", true},
+				{"converged", result.converged},
+				{"fitnessScore", result.fitness_score},
+				{"iterationsDone", result.iterations_done},
+				{"transformation", transform_json},
+				{"cumulativeTransformation", cumulative_transform},
+				{"stats", statsToJson(stats)}
+			};
+			res.set_content(response.dump(), "application/json");
+			
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// ICP Registration - Iterate one step (for interactive use)
+	m_server_.Post("/api/icp/iterate", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			std::lock_guard<std::mutex> lock(m_icp_mutex_);
+			
+			if (!m_source_cloud_ || !m_target_cloud_) {
+				res.status = 400;
+				res.set_content(R"({"error":"ICP not initialized. Call /api/icp/setup first"})", "application/json");
+				return;
+			}
+			
+			PointCloudPtr aligned = boost::make_shared<PointCloud>();
+			auto result = m_icp_->alignOneIteration(aligned);
+			
+			if (!result.converged) {
+				res.status = 400;
+				res.set_content(json{{"error", result.error_message}}.dump(), "application/json");
+				return;
+			}
+			
+			// Update source cloud for next iteration
+			m_source_cloud_ = aligned;
+			setCurrentCloud(aligned);
+			
+			// Convert matrices to JSON
+			json transform_json = json::array();
+			for (int i = 0; i < 4; ++i) {
+				json row = json::array();
+				for (int j = 0; j < 4; ++j) {
+					row.push_back(result.transformation_matrix(i, j));
+				}
+				transform_json.push_back(row);
+			}
+			
+			json cumulative_transform = json::array();
+			auto cumulative = m_icp_->getCumulativeTransformation();
+			for (int i = 0; i < 4; ++i) {
+				json row = json::array();
+				for (int j = 0; j < 4; ++j) {
+					row.push_back(cumulative(i, j));
+				}
+				cumulative_transform.push_back(row);
+			}
+			
+			auto stats = io::calculateStats(aligned);
+			json response = {
+				{"success", true},
+				{"converged", result.converged},
+				{"fitnessScore", result.fitness_score},
+				{"iterationsDone", result.iterations_done},
+				{"transformation", transform_json},
+				{"cumulativeTransformation", cumulative_transform},
+				{"stats", statsToJson(stats)}
+			};
+			res.set_content(response.dump(), "application/json");
+			
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// ICP Registration - Reset
+	m_server_.Post("/api/icp/reset", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			std::lock_guard<std::mutex> lock(m_icp_mutex_);
+			m_icp_->reset();
+			m_source_cloud_.reset();
+			m_target_cloud_.reset();
+			
+			json response = {{"success", true}};
+			res.set_content(response.dump(), "application/json");
+			
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// ICP Registration - Get source and target clouds for visualization
+	m_server_.Get("/api/icp/clouds", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			std::lock_guard<std::mutex> lock(m_icp_mutex_);
+			
+			if (!m_source_cloud_ || !m_target_cloud_) {
+				res.status = 404;
+				res.set_content(R"({"error":"ICP clouds not available"})", "application/json");
+				return;
+			}
+			
+			json response = {
+				{"sourcePoints", m_source_cloud_->size()},
+				{"targetPoints", m_target_cloud_->size()}
+			};
+			res.set_content(response.dump(), "application/json");
+			
 		} catch (const std::exception& e) {
 			res.status = 500;
 			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
