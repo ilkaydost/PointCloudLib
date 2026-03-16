@@ -19,11 +19,9 @@ export function PassThroughControls() {
   const handleApply = async () => {
     setIsLoading(true);
     try {
-      await Promise.all([
-        applyPassThroughFilter('x', minX, maxX),
-        applyPassThroughFilter('y', minY, maxY),
-        applyPassThroughFilter('z', minZ, maxZ),
-      ]);
+      await applyPassThroughFilter('x', minX, maxX);
+      await applyPassThroughFilter('y', minY, maxY);
+      await applyPassThroughFilter('z', minZ, maxZ);
     } finally {
       setIsLoading(false);
     }

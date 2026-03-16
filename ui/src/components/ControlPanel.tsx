@@ -13,6 +13,9 @@ import styles from './css/ControlPanel.module.css';
 export function ControlPanel() {
   const [activeFilter, setActiveFilter] = useState<'passthrough' | 'voxelgrid' | 'ransac' | 'regiongrowing' | 'normals' | 'icp' | null>(null);
   const stats = usePointCloudStore((state) => state.stats);
+  const savePointCloud = usePointCloudStore((state) => state.savePointCloud);
+  const isLoading = usePointCloudStore((state) => state.isLoading);
+  const [saveFormat, setSaveFormat] = useState<'pcd' | 'ply'>('pcd');
 
   return (
     <div className={styles.container}>
@@ -47,6 +50,30 @@ export function ControlPanel() {
               <span className={styles.statValueSmall}>
                 Z: [{stats.bounds.minZ.toFixed(2)}, {stats.bounds.maxZ.toFixed(2)}]
               </span>
+            </div>
+          </div>
+        )}
+
+        {/* Export */}
+        {stats && (
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>Export</h3>
+            <div className={styles.exportRow}>
+              <select
+                value={saveFormat}
+                onChange={(e) => setSaveFormat(e.target.value as 'pcd' | 'ply')}
+                className={styles.formatSelect}
+              >
+                <option value="pcd">PCD</option>
+                <option value="ply">PLY</option>
+              </select>
+              <button
+                onClick={() => savePointCloud(saveFormat)}
+                disabled={isLoading}
+                className={styles.saveButton}
+              >
+                {isLoading ? 'Saving...' : 'Save Cloud'}
+              </button>
             </div>
           </div>
         )}

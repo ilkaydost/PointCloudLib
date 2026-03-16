@@ -201,5 +201,18 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
     })
     return res.json()
+  },
+
+  async savePointCloud(format: 'pcd' | 'ply' = 'pcd', binary: boolean = true): Promise<Blob> {
+    const res = await fetch(`${API_BASE}/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ format, binary }),
+    })
+    if (!res.ok) {
+      const error = await res.json()
+      throw new Error(error.error || 'Save failed')
+    }
+    return res.blob()
   }
 }

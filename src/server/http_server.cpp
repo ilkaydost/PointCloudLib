@@ -29,7 +29,8 @@ void HttpServer::setupCORS() {
 	m_server_.set_default_headers({
 		{"Access-Control-Allow-Origin", "*"},
 		{"Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"},
-		{"Access-Control-Allow-Headers", "Content-Type, Authorization"}
+		{"Access-Control-Allow-Headers", "Content-Type, Authorization"},
+		{"Access-Control-Expose-Headers", "Content-Disposition"}
 	});
     
 	// Handle preflight requests
@@ -265,6 +266,52 @@ void HttpServer::setupRoutes() {
 			};
 			res.set_content(response.dump(), "application/json");
             
+		} catch (const std::exception& e) {
+			res.status = 500;
+			res.set_content(json{{"error", e.what()}}.dump(), "application/json");
+		}
+	});
+
+	// Save/export current point cloud
+	m_server_.Post("/api/save", [this](const httplib::Request& req, httplib::Response& res) {
+		try {
+			auto cloud = getCurrentCloud();
+			if (!cloud || cloud->empty()) {
+				res.status = 404;
+				res.set_content(R"({"error":"No point cloud loaded"})", "application/json");
+				return;
+			}
+
+			auto body = json::parse(req.body);
+			std::string format = body.value("format", "pcd");
+			bool binary = body.value("binary", true);
+
+			auto temp_path = std::filesystem::temp_directory_path() / ("pointcloud_export." + format);
+			std::string path_str = temp_path.string();
+
+			bool saved = false;
+			if (format == "ply") {
+				saved = io::savePointCloudPLY(path_str, cloud, binary);
+			} else {
+				saved = io::savePointCloudPCD(path_str, cloud, binary);
+				format = "pcd";
+			}
+
+			if (!saved) {
+				res.status = 500;
+				res.set_content(R"({"error":"Failed to save point cloud"})", "application/json");
+				return;
+			}
+
+			std::ifstream file(path_str, std::ios::binary);
+			std::string content((std::istreambuf_iterator<char>(file)),
+								 std::istreambuf_iterator<char>());
+			file.close();
+			std::filesystem::remove(temp_path);
+
+			res.set_header("Content-Disposition",
+						   "attachment; filename=\"cloud." + format + "\"");
+			res.set_content(content, "application/octet-stream");
 		} catch (const std::exception& e) {
 			res.status = 500;
 			res.set_content(json{{"error", e.what()}}.dump(), "application/json");

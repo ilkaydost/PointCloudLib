@@ -47,6 +47,7 @@ interface PointCloudState {
   resetICP: () => Promise<void>
   setShowNormals: (v: boolean) => void
   reset: () => void
+  savePointCloud: (format: 'pcd' | 'ply') => Promise<void>
 }
 
 export const usePointCloudStore = create<PointCloudState>((set, get) => ({
@@ -289,5 +290,22 @@ export const usePointCloudStore = create<PointCloudState>((set, get) => ({
     icpFitnessScore: null,
     icpTransformation: null
   }),
+
+  savePointCloud: async (format) => {
+    set({ isLoading: true, error: null })
+    try {
+      const blob = await api.savePointCloud(format)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `cloud.${format}`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : 'Save failed' })
+    } finally {
+      set({ isLoading: false })
+    }
+  },
 }))
 
