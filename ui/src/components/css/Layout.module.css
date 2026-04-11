@@ -9,3 +9,7 @@
 .main {
   @apply flex-1 relative overflow-hidden;
 }
+
+.topActions {
+  @apply absolute top-3 right-3 z-10 flex items-center gap-2;
+}
