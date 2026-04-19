@@ -1,8 +1,9 @@
 # What PointCloudLib application does ?
 A PointCloudViewer UI for visualizing PCD and PLY files, with support for filtering and segmentation methods such as RANSAC, Region Growing, and Clustering
 
-# Installation 
+If you don't want to build the project, you can check it out here (before the domain expires or **broke the afford host and domain cost**): https://www.pointcloudlab.org
 
+# Installation 
 UI (Frontend) Side [In powershell]
 - ```cd ~/PointCloudlib/ui```
 
